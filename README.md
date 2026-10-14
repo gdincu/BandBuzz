@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+> **Reference / fallback — active development has moved to [BandBuzzLite](https://github.com/gdincu/BandBuzzLite).**
+> This repo is frozen and kept as a known-good oracle for re-deriving WinRT IIDs/vtables (compare `src/BandBuzz/Band/` with `BandBuzzLite/src/BandBuzzLite/Band/WinRt*.cs`) and as fallback until BandBuzzLite's end-to-end `--test` against a real Smart Band 8 Active passes. For new installs, use BandBuzzLite. Lineage: [NOTICE.md](NOTICE.md), [LICENSE](LICENSE).
+
 # BandBuzz
 
 Lightweight background tool to push **Chrome and Teams notifications on a Xiaomi Smart Band 8 Active** band over Bluetooth.

@@ -1,5 +1,7 @@
 # Third-party notices
 
+> **Status:** This repo is frozen as reference/fallback. Active successor is [BandBuzzLite](https://github.com/gdincu/BandBuzzLite) (AGPL-3.0-or-later) — same `XiaomiProto`/`XiaomiCrypto`/`XiaomiFrame` and BLE flow, with a clean BCL-only WinRT projection. This repo is kept as the oracle for re-deriving IIDs/vtables until BandBuzzLite's end-to-end band test passes.
+
 ## Gadgetbridge (Freeyourgadget/Gadgetbridge) — AGPL-3.0-or-later
 
 The BLE transport in `src/BandBuzz/Band/` (framing, crypto, link flow) is
