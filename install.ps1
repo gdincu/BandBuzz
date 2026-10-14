@@ -2,16 +2,27 @@
 .SYNOPSIS
   One-command install for BandBuzz: publish -> sparse identity package -> register -> verify.
   No admin, no Visual Studio packaging, no Store. Safe to re-run (idempotent).
+.PARAMETER Release
+  Build the self-contained trimmed single-file release (~14MB exe, no
+  separate Microsoft.Windows.SDK.NET.dll, no .NET 9 runtime prereq) into
+  publish\release instead of the framework-dependent dev output in
+  publish\app. Only one mode can be registered at a time; re-running
+  switches between them.
 .EXAMPLE
   powershell -ExecutionPolicy Bypass -File install.ps1
+.EXAMPLE
+  powershell -ExecutionPolicy Bypass -File install.ps1 -Release
 #>
+param([switch]$Release)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # The Appx cmdlets only exist in Windows PowerShell 5.1, not PowerShell 7+.
 if (-not (Get-Command Add-AppxPackage -ErrorAction SilentlyContinue)) {
   Write-Output "Re-launching under Windows PowerShell 5.1 for Appx cmdlets..."
-  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $PSCommandPath
+  $fwd = @()
+  if ($Release) { $fwd += '-Release' }
+  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $PSCommandPath @fwd
   exit $LASTEXITCODE
 }
 
@@ -21,9 +32,9 @@ $Version = '1.0.0.0'
 $AppId = 'App'
 $Repo = Split-Path -Parent $PSCommandPath
 $Proj = Join-Path $Repo 'src\BandBuzz\BandBuzz.csproj'
-$Pub = Join-Path $Repo 'publish\app'
+$Pub = if ($Release) { Join-Path $Repo 'publish\release' } else { Join-Path $Repo 'publish\app' }
 $PkgDir = Join-Path $Repo 'publish\pkg'
-$Msix = Join-Path $Repo 'publish\BandBuzz.identity.msix'
+$Msix = if ($Release) { Join-Path $Repo 'publish\BandBuzz.release.msix' } else { Join-Path $Repo 'publish\BandBuzz.identity.msix' }
 
 function Fail($msg) { Write-Output "INSTALL FAILED: $msg"; exit 1 }
 
@@ -53,8 +64,13 @@ foreach ($s in @($Name, $Publisher, $AppId)) {
 if ($pkgXml -notlike "*$Version*") { Fail "version '$Version' missing from Package.appxmanifest." }
 
 # ---- 2. publish ----
-Write-Output "Publishing Release to $Pub ..."
-dotnet publish $Proj -c Release -o $Pub
+if ($Release) {
+  Write-Output "Publishing Release (trimmed single-file, win-x64) to $Pub ..."
+  dotnet publish $Proj -c Release -r win-x64 --self-contained true /p:PublishTrimmed=true /p:PublishSingleFile=true -o $Pub
+} else {
+  Write-Output "Publishing Release to $Pub ..."
+  dotnet publish $Proj -c Release -o $Pub
+}
 if ($LASTEXITCODE -ne 0) { Fail "dotnet publish failed." }
 
 # ---- 3. visual assets (resolved from the external location at runtime) ----

@@ -1,6 +1,13 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace BandBuzz;
+
+[JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
+[JsonSerializable(typeof(Config))]
+internal sealed partial class ConfigJsonContext : JsonSerializerContext
+{
+}
 
 internal sealed class Config
 {
@@ -19,8 +26,7 @@ internal sealed class Config
         try
         {
             var json = File.ReadAllText(path);
-            return JsonSerializer.Deserialize<Config>(json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new Config();
+            return JsonSerializer.Deserialize(json, ConfigJsonContext.Default.Config) ?? new Config();
         }
         catch (Exception ex)
         {

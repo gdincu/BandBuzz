@@ -71,6 +71,22 @@ to change them (or which apps are forwarded), edit `src\BandBuzz\appsettings.jso
 You only need to re-run `install.ps1` after updating the app itself;
 changing settings needs no reinstall.
 
+## Release build (single file, no .NET prereq)
+
+The default install above is framework-dependent (`publish\app` + the
+25MB `Microsoft.Windows.SDK.NET.dll`, needs the .NET 9 runtime). For a
+self-contained one-file build instead:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File install.ps1 -Release
+```
+
+This puts a trimmed single `BandBuzz.exe` (~14MB, no separate SDK dll,
+no .NET install needed) in `publish\release` and registers that folder
+instead. Only one mode can be registered at a time — re-running with or
+without `-Release` switches between them. Everyday commands are the same,
+just with the other folder (`.\publish\release\BandBuzz.exe --diag`, …).
+
 ## Troubleshooting
 
 **"No package identity" or notification access "Denied"**
