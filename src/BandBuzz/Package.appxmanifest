@@ -19,10 +19,10 @@
     <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
   </Dependencies>
   <Capabilities>
-    <DeviceCapability Name="bluetooth" />
     <rescap:Capability Name="runFullTrust" />
     <rescap:Capability Name="unvirtualizedResources" />
     <rescap:Capability Name="userNotificationListener" />
+    <DeviceCapability Name="bluetooth" />
   </Capabilities>
   <Applications>
     <Application Id="App" Executable="BandBuzz.exe" uap10:TrustLevel="mediumIL" uap10:RuntimeBehavior="win32App">
