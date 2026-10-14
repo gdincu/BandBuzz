@@ -85,8 +85,10 @@ The Bluetooth key doesn't match this band. Double-check the key in
 `appsettings.json`.
 
 **Nothing connects / device not found**
-The band only talks to one device at a time — close the phone app (or
-anything else connected to the band) and make sure the MAC address is right.
+BandBuzz scans for the band's Bluetooth signal first (up to ~20s), so give
+the first attempt a moment. The band also only talks to one device at a
+time — close the phone app (or anything else connected to the band) and
+make sure the MAC address is right.
 
 **Start here for anything else:** `.\publish\app\BandBuzz.exe --diag`
 prints identity, notification access, Bluetooth radio, and settings in one

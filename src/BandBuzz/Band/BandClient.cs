@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Devices.Bluetooth;
+using Windows.Devices.Bluetooth.Advertisement;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Storage.Streams;
 
@@ -50,6 +51,9 @@ internal sealed class BandClient : IAsyncDisposable
         _encIndex = 1;
 
         var addr = XiaomiProtocol.ParseMac(_mac);
+        // Direct connect only works for devices Windows already knows (e.g. just
+        // seen by another app). Scan first so cold starts find the band too.
+        await WaitForAdvertisementAsync(addr, TimeSpan.FromSeconds(20), ct);
         _log($"Connecting to {_mac} ... (band takes 1 connection - close phone app first)");
         var device = await BluetoothLEDevice.FromBluetoothAddressAsync(addr).AsTask(ct);
         if (device == null)
@@ -79,8 +83,41 @@ internal sealed class BandClient : IAsyncDisposable
         await RunAuthAsync(ct);
     }
 
-    private async Task EnableNotifyAsync(GattCharacteristic c, CancellationToken ct)
+    /// <summary>
+    /// Waits until the band's advertisement is seen. Without this, connecting
+    /// only works if Windows happens to know the device already.
+    /// </summary>
+    private async Task WaitForAdvertisementAsync(ulong addr, TimeSpan timeout, CancellationToken ct)
     {
+        _log("Scanning for the band...");
+        var seen = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var watcher = new BluetoothLEAdvertisementWatcher { ScanningMode = BluetoothLEScanningMode.Active };
+        watcher.Received += (_, args) =>
+        {
+            if (args.BluetoothAddress == addr)
+                seen.TrySetResult(true);
+        };
+        watcher.Stopped += (_, _) => seen.TrySetResult(false);
+        try
+        {
+            watcher.Start();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"BLE scan failed (radio off?): {ex.Message}", ex);
+        }
+        try
+        {
+            if (!await AwaitOrThrowAsync(seen.Task, timeout, $"no BLE advertisement from {_mac} (band nearby and advertising?)", ct))
+                throw new InvalidOperationException("BLE scan stopped unexpectedly (radio off?)");
+        }
+        finally
+        {
+            watcher.Stop();
+        }
+    }
+
+    private async Task EnableNotifyAsync(GattCharacteristic c, CancellationToken ct)    {
         c.ValueChanged += OnValueChanged;
         var cc = await c.WriteClientCharacteristicConfigurationDescriptorAsync(
             GattClientCharacteristicConfigurationDescriptorValue.Notify).AsTask(ct);
